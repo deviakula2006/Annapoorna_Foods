@@ -274,8 +274,8 @@ const PRODUCTS = [
     }
   },
   {
-    id: "chhalgutti", name: "Chhalgutti", category: "snacks",
-    catLabel: "Traditional Snack", img: null,
+    id: "chhalgutti", name: "Challa Gutti", category: "snacks",
+    catLabel: "Traditional Snack", img: "images/challa-gutti.jpg",
     desc: "A traditional fried snack, prepared the homemade way.",
     startAt: 100,
     prices: [["250g", 100], ["500g", 200], ["1kg", 400]],

@@ -627,10 +627,25 @@ p{ margin:0; }
   display:grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg); align-items:center;
 }
 .split-section.reverse .split-media{ order:2; }
-.split-media{ position:relative; }
-.split-media img{
-  width:100%; aspect-ratio: 4 / 5; object-fit:cover;
-  border-radius: var(--radius-lg); box-shadow: var(--shadow-card);
+/* ===== FIX: SHOW COMPLETE STORY & INGREDIENT IMAGES ===== */
+
+.split-media {
+    position: relative !important;
+    overflow: hidden !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    aspect-ratio: auto !important;
+}
+
+.split-media img {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    object-fit: contain !important;
+    aspect-ratio: auto !important;
 }
 .split-media-accent{
   position:absolute; width:70%; aspect-ratio:1; border-radius: var(--radius-lg);
@@ -916,4 +931,179 @@ p{ margin:0; }
   .section-tight{ padding: 40px 0; }
   .container{ padding: 0 20px; }
   .section-header{ margin-bottom: var(--space-sm); }
+}
+/* =========================================
+   WHATSAPP CHANNEL CONTACT CARD FIX
+   ========================================= */
+
+.contact-channel-card {
+    grid-column: 1 / -1 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 24px !important;
+    padding: 28px 32px !important;
+    min-height: auto !important;
+}
+
+.contact-channel-card > svg {
+    flex: 0 0 28px !important;
+    width: 28px !important;
+    height: 28px !important;
+}
+
+.contact-channel-card > div {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+}
+
+.contact-channel-card h2 {
+    margin: 0 0 6px !important;
+    font-size: 1.45rem !important;
+    line-height: 1.2 !important;
+}
+
+.contact-channel-card p {
+    margin: 0 !important;
+    max-width: 700px !important;
+    line-height: 1.6 !important;
+}
+
+.contact-channel-card > a {
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+}
+
+
+/* Mobile */
+@media (max-width: 700px) {
+    .contact-channel-card {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 14px !important;
+        padding: 24px !important;
+    }
+
+    .contact-channel-card > a {
+        width: 100% !important;
+        text-align: center !important;
+    }
+
+    .contact-channel-card h2 {
+        font-size: 1.25rem !important;
+    }
+}
+/* =========================================
+   CONTACT CARDS — PREMIUM BORDER + GLOW
+   ========================================= */
+
+.contact-card {
+    position: relative;
+    border: 1px solid rgba(91, 22, 26, 0.16) !important;
+    box-shadow:
+        0 8px 24px rgba(91, 22, 26, 0.08),
+        0 2px 6px rgba(91, 22, 26, 0.04) !important;
+    transition:
+        transform 0.3s ease,
+        box-shadow 0.3s ease,
+        border-color 0.3s ease !important;
+}
+
+/* Soft golden light around the card */
+.contact-card::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+        135deg,
+        rgba(180, 132, 45, 0.45),
+        rgba(91, 22, 26, 0.10),
+        rgba(180, 132, 45, 0.30)
+    );
+
+    -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+
+    pointer-events: none;
+    opacity: 0.65;
+    transition: opacity 0.3s ease;
+}
+
+/* Hover lighting */
+.contact-card:hover {
+    transform: translateY(-5px) !important;
+    border-color: rgba(180, 132, 45, 0.45) !important;
+
+    box-shadow:
+        0 14px 32px rgba(91, 22, 26, 0.12),
+        0 0 20px rgba(180, 132, 45, 0.12) !important;
+}
+
+.contact-card:hover::before {
+    opacity: 1;
+}
+/* =========================================
+   WHY ANNAPURNA CARDS — PREMIUM BORDER
+   ========================================= */
+
+.why-card {
+    position: relative;
+    border: 1px solid rgba(91, 22, 26, 0.16) !important;
+
+    box-shadow:
+        0 8px 24px rgba(91, 22, 26, 0.08),
+        0 2px 6px rgba(91, 22, 26, 0.04) !important;
+
+    transition:
+        transform 0.3s ease,
+        box-shadow 0.3s ease,
+        border-color 0.3s ease !important;
+}
+
+/* Subtle gold lighting around border */
+.why-card::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+
+    background: linear-gradient(
+        135deg,
+        rgba(180, 132, 45, 0.45),
+        rgba(91, 22, 26, 0.10),
+        rgba(180, 132, 45, 0.30)
+    );
+
+    -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+
+    pointer-events: none;
+    opacity: 0.65;
+
+    transition: opacity 0.3s ease;
+}
+
+/* Hover effect */
+.why-card:hover {
+    transform: translateY(-5px) !important;
+
+    border-color: rgba(180, 132, 45, 0.45) !important;
+
+    box-shadow:
+        0 14px 32px rgba(91, 22, 26, 0.12),
+        0 0 20px rgba(180, 132, 45, 0.12) !important;
+}
+
+.why-card:hover::before {
+    opacity: 1;
 }
