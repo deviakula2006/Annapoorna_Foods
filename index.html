@@ -49,6 +49,10 @@
       <a href="#" data-wa class="icon-btn" aria-label="Message Annapurna Foods on WhatsApp">
         <svg viewBox="0 0 24 24" fill="none"><path d="M20.5 3.5A10.7 10.7 0 0 0 12.1 0C6 0 1.1 4.9 1.1 11c0 1.9.5 3.8 1.5 5.4L1 22l5.8-1.5c1.5.8 3.2 1.3 5 1.3 6 0 10.9-4.9 10.9-11 0-2.9-1.2-5.7-3.2-7.8ZM12.1 20a9 9 0 0 1-4.6-1.3l-.3-.2-3.4.9.9-3.3-.2-.3A8.9 8.9 0 0 1 3.1 11c0-5 4.1-9 9-9 2.4 0 4.6.9 6.3 2.6a8.8 8.8 0 0 1 2.6 6.3c0 5-4.1 9-8.9 9Zm4.9-6.7c-.3-.1-1.6-.8-1.8-.9-.2-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.2.2-.3.2-.5.1-.3-.1-1.2-.4-2.2-1.4-.8-.7-1.4-1.6-1.5-1.9-.2-.3 0-.5.1-.6l.4-.5.2-.3v-.3c0-.1-.6-1.4-.8-1.9-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.2s1 2.6 1.1 2.7c.1.2 2 3 4.7 4.2.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.5-.1 1.6-.7 1.9-1.3.2-.6.2-1.1.2-1.3-.1-.1-.3-.2-.6-.3Z" fill="currentColor"/></svg>
       </a>
+      <button type="button" class="icon-btn cart-btn" id="cartToggleBtn" aria-label="View cart">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M3 3h2l2.4 12.4a2 2 0 0 0 2 1.6h8.4a2 2 0 0 0 2-1.6L21 8H6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="20.5" r="1.4" fill="currentColor"/><circle cx="17" cy="20.5" r="1.4" fill="currentColor"/></svg>
+        <span class="cart-badge" id="cartBadge" style="display:none;">0</span>
+      </button>
       <button class="hamburger" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
@@ -461,6 +465,103 @@
   <span>Order on WhatsApp</span>
 </a>
 
+<!-- ============ MOBILE STICKY CART BAR ============ -->
+<div class="mobile-cart-bar" id="mobileCartBar">
+  <div class="mcb-info">
+    <span class="mcb-count" id="mcbCount">0 items</span>
+    <span class="mcb-total" id="mcbTotal">₹0</span>
+  </div>
+  <button type="button" class="btn btn-gold btn-sm" id="mcbViewCartBtn">View Cart</button>
+</div>
+
+<!-- ============ CART DRAWER ============ -->
+<div class="cart-overlay" id="cartOverlay" role="dialog" aria-modal="true" aria-labelledby="cartTitle">
+  <div class="cart-backdrop"></div>
+  <div class="cart-panel">
+    <div class="cart-panel-top">
+      <h3 id="cartTitle">Your Cart</h3>
+      <button type="button" class="cart-close" id="cartCloseBtn" aria-label="Close cart">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <div class="cart-items" id="cartItems"></div>
+
+    <div class="cart-empty" id="cartEmptyState" style="display:none;">
+      <span class="cart-empty-icon">🛒</span>
+      <h4>Your Cart Is Empty</h4>
+      <p>Explore our homemade sweets, snacks and podis.</p>
+      <button type="button" class="btn btn-gold" id="cartEmptyExploreBtn">Explore Our Menu</button>
+    </div>
+
+    <div class="cart-footer" id="cartFooter">
+      <div class="cart-subtotal-row">
+        <span>Subtotal</span>
+        <span id="cartSubtotal">₹0</span>
+      </div>
+      <div class="cart-footer-actions">
+        <button type="button" class="btn btn-outline-dark btn-block" id="cartContinueBtn">Continue Shopping</button>
+        <button type="button" class="btn btn-primary btn-block" id="cartCheckoutBtn">Proceed to Order</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ADD TO CART TOAST ============ -->
+<div class="toast" id="cartToast" role="status" aria-live="polite">
+  <div class="toast-icon">✓</div>
+  <div class="toast-body">
+    <strong>Added to Cart</strong>
+    <span id="toastSubtitle"></span>
+  </div>
+  <button type="button" class="toast-action" id="toastViewCartBtn">View Cart</button>
+</div>
+
+<!-- ============ CHECKOUT MODAL ============ -->
+<div class="modal-overlay" id="checkoutModal" role="dialog" aria-modal="true" aria-labelledby="checkoutModalTitle">
+  <div class="modal-box modal-lg">
+    <button class="modal-close" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <div class="modal-body checkout-body">
+      <span class="modal-badge">Checkout</span>
+      <h3 class="modal-title" id="checkoutModalTitle">Complete Your Order</h3>
+
+      <div class="checkout-summary" id="checkoutSummary"></div>
+      <div class="checkout-total-row">
+        <span>Total</span>
+        <span id="checkoutTotal">₹0</span>
+      </div>
+
+      <form id="checkoutForm" novalidate>
+        <div class="form-field">
+          <label for="ckName">Name *</label>
+          <input type="text" id="ckName" name="name" autocomplete="name" placeholder="Your full name">
+          <span class="field-error" id="ckNameError"></span>
+        </div>
+        <div class="form-field">
+          <label for="ckPhone">Phone Number *</label>
+          <input type="tel" id="ckPhone" name="phone" autocomplete="tel" placeholder="10-digit mobile number">
+          <span class="field-error" id="ckPhoneError"></span>
+        </div>
+        <div class="form-field">
+          <label for="ckAddress">Delivery Address *</label>
+          <textarea id="ckAddress" name="address" rows="3" placeholder="House / street, area, city, pincode"></textarea>
+          <span class="field-error" id="ckAddressError"></span>
+        </div>
+        <div class="form-field">
+          <label for="ckNote">Additional Note (optional)</label>
+          <textarea id="ckNote" name="note" rows="2" placeholder="Any special instructions"></textarea>
+        </div>
+        <div class="modal-actions checkout-actions">
+          <button type="button" class="btn btn-outline-dark" id="checkoutBackBtn">Edit Cart</button>
+          <button type="submit" class="btn btn-whatsapp modal-wa-btn" id="checkoutSubmitBtn">Order on WhatsApp</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <!-- ============ PRICE MODAL ============ -->
 <div class="modal-overlay" id="priceModal" role="dialog" aria-modal="true" aria-labelledby="priceModalTitle">
   <div class="modal-box">
@@ -480,7 +581,16 @@
         </select>
       </div>
 
-      <table class="price-table"></table>
+      <div class="variant-select" id="variantSelect"></div>
+
+      <div class="qty-row">
+        <span class="qty-label">Quantity</span>
+        <div class="qty-stepper">
+          <button type="button" class="qty-btn" id="qtyMinus" aria-label="Decrease quantity">−</button>
+          <span class="qty-value" id="qtyValue">1</span>
+          <button type="button" class="qty-btn" id="qtyPlus" aria-label="Increase quantity">+</button>
+        </div>
+      </div>
 
       <div class="bulk-note">
         <strong>Bulk Orders?</strong>
@@ -488,8 +598,14 @@
       </div>
 
       <div class="modal-actions">
-        <a href="#" data-wa class="btn btn-whatsapp modal-wa-btn">WhatsApp To Order</a>
-        <a href="#" data-tel class="btn btn-outline-dark">Call Us</a>
+        <button type="button" class="btn btn-primary modal-add-btn" id="modalAddToCartBtn">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M3 3h2l2.4 12.4a2 2 0 0 0 2 1.6h8.4a2 2 0 0 0 2-1.6L21 8H6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="20.5" r="1.4" fill="currentColor"/><circle cx="17" cy="20.5" r="1.4" fill="currentColor"/></svg>
+          Add to Cart
+          <span class="modal-add-price" id="modalAddPrice"></span>
+        </button>
+      </div>
+      <div class="modal-actions modal-actions-secondary">
+        <a href="#" data-tel class="btn btn-outline-dark btn-block">Call Us</a>
       </div>
     </div>
   </div>

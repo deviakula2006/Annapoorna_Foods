@@ -378,6 +378,7 @@ const CATEGORY_META = {
    INIT — run after DOM ready
    ========================================================= */
 document.addEventListener("DOMContentLoaded", () => {
+  loadCart();
   wireContactLinks();
   wireRevealAnimations();
   renderProductGrid("all");
@@ -385,6 +386,10 @@ document.addEventListener("DOMContentLoaded", () => {
   wireNavbar();
   wireMobileMenu();
   wireModals();
+  wireModalQtyButtons();
+  wireCart();
+  wireCheckout();
+  updateCartCount();
   document.getElementById("year").textContent = new Date().getFullYear();
 });
 
@@ -534,6 +539,8 @@ function wireModals(){
   document.addEventListener("keydown", e => {
     if (e.key === "Escape"){
       document.querySelectorAll(".modal-overlay.open").forEach(o => closeModal(o));
+      const cartOverlay = document.getElementById("cartOverlay");
+      if (cartOverlay && cartOverlay.classList.contains("open")) closeCart();
     }
   });
 }
@@ -572,10 +579,24 @@ function setModalImage(overlay, p){
   }
 }
 
+/* State for the product/price modal's in-progress selection —
+   which variant (size, and flour where relevant) and quantity
+   the customer currently has selected, before adding to cart. */
+let modalProduct = null;
+let modalVariantIndex = 0;
+let modalQty = 1;
+
+function getProductVariants(p){
+  return p.hasFlour ? p.priceSets[currentFlour] : p.prices;
+}
+
 function openPriceModal(id){
   const p = PRODUCTS.find(x => x.id === id);
   if (!p) return;
   currentFlour = "godhuma";
+  modalProduct = p;
+  modalVariantIndex = 0;
+  modalQty = 1;
 
   const overlay = document.getElementById("priceModal");
   setModalImage(overlay, p);
@@ -587,24 +608,108 @@ function openPriceModal(id){
   if (p.hasFlour){
     flourWrap.style.display = "block";
     select.value = "godhuma";
-    select.onchange = () => { currentFlour = select.value; renderPriceTable(p); };
+    select.onchange = () => {
+      currentFlour = select.value;
+      modalVariantIndex = 0;
+      renderVariantSelect(p);
+      updateModalAddButton(p);
+    };
   } else {
     flourWrap.style.display = "none";
   }
 
-  renderPriceTable(p);
-
-  const waBtn = overlay.querySelector(".modal-wa-btn");
-  waBtn.href = waLink(`Hello Annapurna Foods! I would like to order ${p.name}. Could you share more details?`);
+  renderVariantSelect(p);
+  renderQtyStepper();
+  updateModalAddButton(p);
 
   openModal(overlay);
 }
 
-function renderPriceTable(p){
+/* Renders the list of selectable sizes/variants for the current
+   product. A product with only one price option is shown as a
+   single, non-interactive row instead of a fake selector. */
+function renderVariantSelect(p){
   const overlay = document.getElementById("priceModal");
-  const table = overlay.querySelector(".price-table");
-  const rows = p.hasFlour ? p.priceSets[currentFlour] : p.prices;
-  table.innerHTML = rows.map(([qty, price]) => `<tr><td>${qty}</td><td>₹${price}</td></tr>`).join("");
+  const wrap = overlay.querySelector("#variantSelect");
+  const rows = getProductVariants(p);
+  const single = rows.length === 1;
+
+  wrap.innerHTML = rows.map(([qty, price], i) => `
+    <button type="button"
+      class="variant-option ${i === modalVariantIndex ? "selected" : ""} ${single ? "single" : ""}"
+      data-variant-index="${i}" ${single ? "disabled aria-disabled=\"true\"" : ""}
+      aria-pressed="${i === modalVariantIndex}">
+      <span class="vo-size">${qty}</span>
+      <span class="vo-price">₹${price}</span>
+    </button>
+  `).join("");
+
+  if (!single){
+    wrap.querySelectorAll(".variant-option").forEach(btn => {
+      btn.addEventListener("click", () => {
+        modalVariantIndex = parseInt(btn.getAttribute("data-variant-index"), 10);
+        renderVariantSelect(p);
+        updateModalAddButton(p);
+      });
+    });
+  }
+}
+
+function renderQtyStepper(){
+  document.getElementById("qtyValue").textContent = modalQty;
+}
+
+function updateModalAddButton(p){
+  const rows = getProductVariants(p);
+  const [ , price ] = rows[modalVariantIndex];
+  const total = price * modalQty;
+  document.getElementById("modalAddPrice").textContent = `₹${total}`;
+}
+
+/* Wires the quantity stepper and Add to Cart button inside the
+   price modal. These elements are static in the DOM (unlike the
+   variant list, which is rebuilt per product), so they're wired
+   once on init rather than on every openPriceModal() call. */
+function wireModalQtyButtons(){
+  document.getElementById("qtyMinus").addEventListener("click", () => {
+    if (!modalProduct || modalQty <= 1) return;
+    modalQty--;
+    renderQtyStepper();
+    updateModalAddButton(modalProduct);
+  });
+  document.getElementById("qtyPlus").addEventListener("click", () => {
+    if (!modalProduct) return;
+    modalQty++;
+    renderQtyStepper();
+    updateModalAddButton(modalProduct);
+  });
+  document.getElementById("modalAddToCartBtn").addEventListener("click", () => {
+    if (!modalProduct) return;
+    const rows = getProductVariants(modalProduct);
+    const [variantLabel, price] = rows[modalVariantIndex];
+    const variant = modalProduct.hasFlour
+      ? `${variantLabel} (${currentFlour === "godhuma" ? "Godhuma Flour" : "Maida"})`
+      : variantLabel;
+
+    addToCart({
+      id: modalProduct.id,
+      name: modalProduct.name,
+      variant,
+      price,
+      quantity: modalQty,
+      image: modalProduct.img || ""
+    });
+
+    // The modal's quantity is only a TEMPORARY selection for the next
+    // add — it must never be confused with (or leak into) the cart's
+    // own stored quantity for that line. Reset it back to the minimum
+    // right after the item is committed to the cart, so if the modal
+    // stays open the customer starts their next selection fresh instead
+    // of seeing the previous quantity (e.g. "3") still sitting there.
+    modalQty = 1;
+    renderQtyStepper();
+    updateModalAddButton(modalProduct);
+  });
 }
 
 function openAboutModal(id){
@@ -641,4 +746,377 @@ function wireRevealAnimations(){
 }
 function observeEls(list){
   list.forEach(el => observer.observe(el));
+}
+
+/* =========================================================
+   SHOPPING CART — single source of truth for cart state,
+   persisted to localStorage. No backend, no accounts: this is
+   just a structured list that gets turned into a WhatsApp
+   message at checkout.
+   ========================================================= */
+const CART_STORAGE_KEY = "annapurnaCart";
+let cart = [];
+
+function loadCart(){
+  try{
+    const raw = localStorage.getItem(CART_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    cart = Array.isArray(parsed) ? parsed : [];
+  } catch (e){
+    cart = [];
+  }
+}
+
+function saveCart(){
+  try{ localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart)); }
+  catch (e){ /* localStorage unavailable — cart just won't persist across reloads */ }
+}
+
+function findCartItem(cartId){
+  return cart.find(item => item.cartId === cartId);
+}
+
+/* A cart line is uniquely identified by product id + variant, so
+   "Kobbari Kova 250g" and "Kobbari Kova 500g" are separate lines,
+   while adding the same product + variant twice just increases
+   the quantity on the existing line. */
+function makeCartId(id, variant){
+  return `${id}__${variant}`;
+}
+
+function addToCart({ id, name, variant, price, quantity, image }){
+  const cartId = makeCartId(id, variant);
+  const existing = findCartItem(cartId);
+  if (existing){
+    existing.quantity += quantity;
+  } else {
+    cart.push({ cartId, id, name, variant, price, quantity, image });
+  }
+  saveCart();
+  updateCartCount();
+  renderCart();
+  showToast(name, variant);
+}
+
+function removeFromCart(cartId){
+  cart = cart.filter(item => item.cartId !== cartId);
+  saveCart();
+  updateCartCount();
+  renderCart();
+}
+
+function updateQuantity(cartId, newQty){
+  const item = findCartItem(cartId);
+  if (!item) return;
+  if (newQty < 1){ removeFromCart(cartId); return; }
+  item.quantity = newQty;
+  saveCart();
+  updateCartCount();
+  renderCart();
+}
+
+function clearCart(){
+  cart = [];
+  saveCart();
+  updateCartCount();
+  renderCart();
+}
+
+function calculateCartTotal(){
+  return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+}
+
+function getCartCount(){
+  return cart.reduce((sum, item) => sum + item.quantity, 0);
+}
+
+/* Keeps every visible cart indicator (navbar badge, mobile sticky
+   bar) in sync. Called after every cart mutation. */
+function updateCartCount(){
+  const count = getCartCount();
+  const total = calculateCartTotal();
+
+  const badge = document.getElementById("cartBadge");
+  if (badge){
+    badge.textContent = count;
+    badge.style.display = count > 0 ? "flex" : "none";
+  }
+
+  const mcbCount = document.getElementById("mcbCount");
+  const mcbTotal = document.getElementById("mcbTotal");
+  const bar = document.getElementById("mobileCartBar");
+  if (mcbCount) mcbCount.textContent = `${count} item${count === 1 ? "" : "s"}`;
+  if (mcbTotal) mcbTotal.textContent = `₹${total}`;
+  if (bar) bar.classList.toggle("visible", count > 0);
+
+  document.body.classList.toggle("has-mobile-cart", count > 0);
+}
+
+function cartItemImageMarkup(item){
+  if (item.image){
+    return `<img src="${item.image}" alt="${item.name}">`;
+  }
+  return `<div class="ci-image-pending" aria-hidden="true">${PENDING_ICON}</div>`;
+}
+
+/* Rebuilds the cart drawer's item list and subtotal, or shows the
+   empty-cart state when there's nothing to show. */
+function renderCart(){
+  const list = document.getElementById("cartItems");
+  const emptyState = document.getElementById("cartEmptyState");
+  const footer = document.getElementById("cartFooter");
+  if (!list) return;
+
+  if (cart.length === 0){
+    list.innerHTML = "";
+    list.style.display = "none";
+    emptyState.style.display = "flex";
+    footer.style.display = "none";
+    return;
+  }
+
+  list.style.display = "flex";
+  emptyState.style.display = "none";
+  footer.style.display = "block";
+
+  list.innerHTML = cart.map(item => `
+    <div class="cart-item" data-cart-id="${item.cartId}">
+      <div class="ci-image">${cartItemImageMarkup(item)}</div>
+      <div class="ci-body">
+        <h4 class="ci-name">${item.name}</h4>
+        <span class="ci-variant">${item.variant}</span>
+        <div class="ci-row">
+          <div class="qty-stepper sm">
+            <button type="button" class="qty-btn" data-action="dec" aria-label="Decrease quantity of ${item.name}">−</button>
+            <span class="qty-value">${item.quantity}</span>
+            <button type="button" class="qty-btn" data-action="inc" aria-label="Increase quantity of ${item.name}">+</button>
+          </div>
+          <span class="ci-total">₹${item.price * item.quantity}</span>
+        </div>
+      </div>
+      <button type="button" class="ci-remove" aria-label="Remove ${item.name} from cart">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M10 7l1 13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  `).join("");
+
+  document.getElementById("cartSubtotal").textContent = `₹${calculateCartTotal()}`;
+}
+
+/* Event delegation for cart-item controls: the list is rebuilt on
+   every render, so we wire one listener on the container instead
+   of re-binding per-item buttons each time. */
+function wireCartItemEvents(){
+  const list = document.getElementById("cartItems");
+  list.addEventListener("click", e => {
+    const qtyBtn = e.target.closest(".qty-btn");
+    const removeBtn = e.target.closest(".ci-remove");
+    if (qtyBtn){
+      const wrap = qtyBtn.closest("[data-cart-id]");
+      const cartId = wrap.getAttribute("data-cart-id");
+      const item = findCartItem(cartId);
+      if (!item) return;
+      const delta = qtyBtn.getAttribute("data-action") === "inc" ? 1 : -1;
+      updateQuantity(cartId, item.quantity + delta);
+    } else if (removeBtn){
+      const wrap = removeBtn.closest("[data-cart-id]");
+      removeFromCart(wrap.getAttribute("data-cart-id"));
+    }
+  });
+}
+
+function openCart(){
+  renderCart();
+  document.getElementById("cartOverlay").classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+function closeCart(){
+  document.getElementById("cartOverlay").classList.remove("open");
+  document.body.style.overflow = "";
+}
+
+/* Wires every trigger that opens or closes the cart drawer. */
+function wireCart(){
+  document.getElementById("cartToggleBtn").addEventListener("click", openCart);
+  document.getElementById("mcbViewCartBtn").addEventListener("click", openCart);
+  document.getElementById("cartCloseBtn").addEventListener("click", closeCart);
+  document.querySelector("#cartOverlay .cart-backdrop").addEventListener("click", closeCart);
+  document.getElementById("cartContinueBtn").addEventListener("click", closeCart);
+  document.getElementById("cartCheckoutBtn").addEventListener("click", () => {
+    closeCart();
+    openCheckout();
+  });
+  document.getElementById("cartEmptyExploreBtn").addEventListener("click", () => {
+    closeCart();
+    document.getElementById("menu").scrollIntoView({ behavior: "smooth" });
+  });
+  document.getElementById("toastViewCartBtn").addEventListener("click", () => {
+    document.getElementById("cartToast").classList.remove("show");
+    openCart();
+  });
+  wireCartItemEvents();
+}
+
+/* =========================================================
+   ADD-TO-CART TOAST
+   ========================================================= */
+let toastTimer = null;
+function showToast(name, variant){
+  const toast = document.getElementById("cartToast");
+  document.getElementById("toastSubtitle").textContent = `${name} • ${variant}`;
+  toast.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove("show"), 3200);
+}
+
+/* =========================================================
+   CHECKOUT — collects the details needed to prepare the
+   WhatsApp order message. No payment, no account, no server:
+   this only formats data that's already in the cart.
+   ========================================================= */
+function buildOrderSummaryHTML(){
+  return cart.map(item => `
+    <div class="summary-row">
+      <div class="summary-main">
+        <span class="summary-name">${item.name}</span>
+        <span class="summary-meta">${item.variant} · Qty ${item.quantity} · ₹${item.price} each</span>
+      </div>
+      <span class="summary-total">₹${item.price * item.quantity}</span>
+    </div>
+  `).join("");
+}
+
+function openCheckout(){
+  if (cart.length === 0) return;
+  document.getElementById("checkoutSummary").innerHTML = buildOrderSummaryHTML();
+  document.getElementById("checkoutTotal").textContent = `₹${calculateCartTotal()}`;
+  clearCheckoutErrors();
+  openModal(document.getElementById("checkoutModal"));
+}
+function closeCheckout(){
+  closeModal(document.getElementById("checkoutModal"));
+}
+
+function clearCheckoutErrors(){
+  ["ckName", "ckPhone", "ckAddress"].forEach(id => {
+    document.getElementById(id + "Error").textContent = "";
+    document.getElementById(id).classList.remove("invalid");
+  });
+}
+function setFieldError(id, message){
+  document.getElementById(id + "Error").textContent = message;
+  document.getElementById(id).classList.add("invalid");
+}
+
+/* Basic, non-punitive validation: just enough to make sure the
+   owner receives a usable name, contact number and address. Not
+   strict about phone formatting so normal Indian numbers (with
+   or without +91, spaces or dashes) are all accepted. */
+function validateCheckout(){
+  let valid = true;
+  clearCheckoutErrors();
+
+  const name = document.getElementById("ckName").value.trim();
+  const phone = document.getElementById("ckPhone").value.trim();
+  const address = document.getElementById("ckAddress").value.trim();
+
+  if (!name){
+    setFieldError("ckName", "Please enter your name.");
+    valid = false;
+  }
+
+  const phoneDigits = phone.replace(/\D/g, "");
+  if (!phone){
+    setFieldError("ckPhone", "Please enter your phone number.");
+    valid = false;
+  } else if (phoneDigits.length < 10 || phoneDigits.length > 13){
+    setFieldError("ckPhone", "Please enter a valid phone number.");
+    valid = false;
+  }
+
+  if (!address){
+    setFieldError("ckAddress", "Please enter your delivery address.");
+    valid = false;
+  }
+
+  return valid;
+}
+
+/* Turns the current cart + customer details into a readable,
+   line-broken WhatsApp message using the real product prices
+   already in PRODUCTS/cart — never a hard-coded total. */
+function generateWhatsAppMessage(customer){
+  const lines = [];
+  lines.push("Hello Annapurna Foods! 👋");
+  lines.push("");
+  lines.push("I would like to place an order.");
+  lines.push("");
+  lines.push("━━━━━━━━━━━━━━━━━━");
+  lines.push("🛍️ ORDER DETAILS");
+  lines.push("━━━━━━━━━━━━━━━━━━");
+
+  cart.forEach((item, i) => {
+    lines.push("");
+    lines.push(`${i + 1}. ${item.name}`);
+    lines.push(`   Size: ${item.variant}`);
+    lines.push(`   Quantity: ${item.quantity}`);
+    lines.push(`   Unit Price: ₹${item.price}`);
+    lines.push(`   Item Total: ₹${item.price * item.quantity}`);
+  });
+
+  lines.push("");
+  lines.push("━━━━━━━━━━━━━━━━━━");
+  lines.push("💰 ORDER SUMMARY");
+  lines.push("━━━━━━━━━━━━━━━━━━");
+  lines.push("");
+  lines.push(`TOTAL: ₹${calculateCartTotal()}`);
+  lines.push("");
+  lines.push("━━━━━━━━━━━━━━━━━━");
+  lines.push("👤 CUSTOMER DETAILS");
+  lines.push("━━━━━━━━━━━━━━━━━━");
+  lines.push("");
+  lines.push(`Name: ${customer.name}`);
+  lines.push("");
+  lines.push(`Phone: ${customer.phone}`);
+  lines.push("");
+  lines.push("📍 Delivery Address:");
+  lines.push(customer.address);
+
+  if (customer.note){
+    lines.push("");
+    lines.push("📝 Note:");
+    lines.push(customer.note);
+  }
+
+  lines.push("");
+  lines.push("Thank you! 🙏");
+
+  return lines.join("\n");
+}
+
+function submitCheckout(e){
+  e.preventDefault();
+  if (!validateCheckout()) return;
+
+  const customer = {
+    name: document.getElementById("ckName").value.trim(),
+    phone: document.getElementById("ckPhone").value.trim(),
+    address: document.getElementById("ckAddress").value.trim(),
+    note: document.getElementById("ckNote").value.trim()
+  };
+
+  const message = generateWhatsAppMessage(customer);
+  window.open(waLink(message), "_blank", "noopener");
+
+  closeCheckout();
+  clearCart();
+  document.getElementById("checkoutForm").reset();
+}
+
+function wireCheckout(){
+  document.getElementById("checkoutForm").addEventListener("submit", submitCheckout);
+  document.getElementById("checkoutBackBtn").addEventListener("click", () => {
+    closeCheckout();
+    openCart();
+  });
 }
