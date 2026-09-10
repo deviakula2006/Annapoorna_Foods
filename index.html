@@ -189,7 +189,7 @@
     </div>
   </section>
 
-  <!-- ============ SIGNATURE PRODUCTS ============ -->
+  <!-- ============ SIGNATURE PRODUCTS ============
   <section class="section section-tight" style="background:var(--cream-2)">
     <div class="container">
       <div class="section-header reveal-up">
@@ -199,7 +199,7 @@
       </div>
       <div class="product-grid" id="signatureGrid"></div>
     </div>
-  </section>
+  </section> -->
 
   <!-- ============ COMPLETE MENU ============ -->
   <section class="section menu-section" id="menu">
@@ -207,14 +207,42 @@
       <div class="section-header reveal-up">
         <span class="section-kicker">The Full Spread</span>
         <h2>Our Complete Menu</h2>
-        <p>24 traditional recipes across sweets, snacks and podis — browse by category or see everything at once.</p>
+        <p>Traditional recipes across sweets, snacks and podis — browse by category or see everything at once.</p>
       </div>
+      
+
       <div class="menu-tabs reveal-up">
-        <button class="menu-tab active" data-filter="all">All</button>
-        <button class="menu-tab" data-filter="sweets">Sweets</button>
-        <button class="menu-tab" data-filter="snacks">Snacks</button>
-        <button class="menu-tab" data-filter="podis">Podis</button>
-      </div>
+    <button class="menu-tab active" data-filter="all">All</button>
+    <button class="menu-tab" data-filter="sweets">Sweets</button>
+    <button class="menu-tab" data-filter="snacks">Snacks</button>
+    <button class="menu-tab" data-filter="podis">Podis</button>
+</div>
+
+<!-- SEARCH BAR -->
+<div class="menu-search-wrap">
+    <div class="menu-search">
+        <span class="menu-search-icon">⌕</span>
+
+        <input
+            type="text"
+            id="menuSearch"
+            placeholder="Search your favourite food..."
+            autocomplete="off"
+        >
+
+        <button
+            type="button"
+            id="menuSearchClear"
+            hidden
+            aria-label="Clear search"
+        >
+            ×
+        </button>
+    </div>
+</div>
+
+
+      
       <div class="product-grid" id="productGrid"></div>
       <p class="menu-empty" id="menuEmpty">No products found in this category.</p>
     </div>
@@ -362,16 +390,7 @@
             <a href="#" data-email>annapoornafoods01@gmail.com →</a>
           </div>
         </div>
-        <div class="contact-card contact-channel-card reveal-up d5">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M4 11.5 12 4l8 7.5V20a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1v-8.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
-          <div>
-           <h2>Stay Connected With Annapurna</h2>
-        <p>Join our WhatsApp channel for fresh updates, new batches and special offers straight from our kitchen.</p>
-      </div>
-          <a href="#" data-wa-group class="btn btn-whatsapp btn-sm">Join WhatsApp Channel →</a>
-        </div>
-        </div>
-      </div>
+        
     </div>
   </section>
 
@@ -446,7 +465,7 @@
       <div class="footer-col">
         <h5>ORDERING</h5>
         <ul>
-          <li><a href="#menu">View Prices</a></li>
+          <li><a href="#menu"> Add to Cart</a></li>
           <li><a href="#" data-wa="Hello Annapurna Foods! I would like to enquire about a bulk order.">Bulk Orders</a></li>
           <li><a href="#" data-wa-group>WhatsApp Channel</a></li>
         </ul>
@@ -460,9 +479,22 @@
 </footer>
 
 <!-- ============ FLOATING WHATSAPP BUTTON ============ -->
-<a href="#" data-wa class="float-whatsapp" aria-label="Order on WhatsApp">
-  <svg viewBox="0 0 24 24" fill="none"><path d="M20.5 3.5A10.7 10.7 0 0 0 12.1 0C6 0 1.1 4.9 1.1 11c0 1.9.5 3.8 1.5 5.4L1 22l5.8-1.5c1.5.8 3.2 1.3 5 1.3 6 0 10.9-4.9 10.9-11 0-2.9-1.2-5.7-3.2-7.8Z" fill="currentColor"/></svg>
-  <span>Order on WhatsApp</span>
+<a
+  href="#"
+  data-tel
+  class="float-whatsapp"
+  aria-label="Call for Bulk Orders"
+>
+  <svg viewBox="0 0 24 24" fill="none">
+    <path
+      d="M6 3h3l2 5-2.5 2a12 12 0 0 0 5.5 5.5l2-2.5 5 2v3a2 2 0 0 1-2.2 2A17 17 0 0 1 4 6.2 2 2 0 0 1 6 3Z"
+      stroke="currentColor"
+      stroke-width="1.6"
+      stroke-linejoin="round"
+    />
+  </svg>
+
+  <span>Call for Bulk Orders</span>
 </a>
 
 <!-- ============ MOBILE STICKY CART BAR ============ -->
@@ -661,9 +693,9 @@
         <div class="pc-body">
           <h3 class="pc-name">${p.name}</h3>
           <p class="pc-desc">${p.desc}</p>
-          <span class="pc-price">Starts at ₹${p.startAt}</span>
+          <span class="pc-price">${getStartingPriceLabel(p)}</span>
           <div class="pc-actions">
-            <button type="button" class="pc-btn-price" data-price-id="${p.id}">View Prices</button>
+            <button type="button" class="pc-btn-price" data-price-id="${p.id}"> Add to Cart</button>
             <button type="button" class="pc-btn-about" data-about-id="${p.id}">About</button>
           </div>
         </div>`;

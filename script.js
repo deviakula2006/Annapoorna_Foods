@@ -65,6 +65,52 @@ const PRODUCTS = [
     }
   },
   {
+  id: "bellam-kommulu",
+  name: "Bellam Kommulu",
+  category: "sweets",
+  catLabel: "Traditional Sweet",
+  img: "images/bellam_kommulu.jpg",
+  desc: "Traditional jaggery sweet, freshly prepared in the homemade style.",
+  startAt: 100,
+  prices: [["250g", 100]],
+  about: {
+    what: "Bellam Kommulu is a traditional jaggery-based sweet prepared in the homemade style.",
+    tradition: "A traditional Andhra sweet enjoyed as part of festive and family occasions.",
+    taste: "Rich jaggery sweetness with a comforting traditional flavour.",
+    loved: [
+      "Traditional Andhra preparation",
+      "Made with jaggery",
+      "Freshly prepared in small batches",
+      "Homemade festive flavour"
+    ]
+  }
+},
+{
+  id: "thokkudu-laddu",
+  name: "Thokkudu Laddu",
+  category: "sweets",
+  catLabel: "Traditional Sweet",
+  img: "images/thokkuladdu.jpg",
+  desc: "A traditional Andhra laddu, rich, festive and handmade.",
+  startAt: 120,
+  prices: [
+    ["250g", 120],
+    ["500g", 240],
+    ["1kg", 480]
+  ],
+  about: {
+    what: "Thokkudu Laddu is a traditional Andhra laddu prepared with care and shaped into a rich, festive sweet.",
+    tradition: "A cherished traditional sweet associated with Andhra festive and family celebrations.",
+    taste: "Rich, aromatic and satisfying with a traditional homemade texture.",
+    loved: [
+      "Traditional Andhra sweet",
+      "Handmade in small batches",
+      "Rich festive flavour",
+      "Perfect for celebrations and gifting"
+    ]
+  }
+},
+  {
     id: "kobbari-undalu", name: "Kobbari Undalu", category: "sweets",
     catLabel: "Traditional Sweet", img: "images/kobbari-undalu.jpg",
     desc: "Bite-sized coconut laddus, simple and homely.",
@@ -248,6 +294,31 @@ const PRODUCTS = [
     }
   },
   {
+  id: "chakodi",
+  name: "Chakodi",
+  category: "snacks",
+  catLabel: "Traditional Snack",
+  img: "images/chekodi.jpg",
+  desc: "Crispy traditional Andhra chakodi with a satisfying savoury crunch.",
+  startAt: 80,
+  prices: [
+    ["250g", 80],
+    ["500g", 160],
+    ["1kg", 290]
+  ],
+  about: {
+    what: "Chakodi is a traditional Andhra savoury snack known for its crisp texture and distinctive shape.",
+    tradition: "A much-loved homemade snack prepared for festivals, guests and everyday tea-time.",
+    taste: "Crispy, savoury and crunchy with a satisfying bite.",
+    loved: [
+      "Traditional Andhra snack",
+      "Crispy homemade texture",
+      "Freshly prepared in small batches",
+      "Perfect for tea-time and sharing"
+    ]
+  }
+},
+  {
     id: "gorimitilu", name: "Gorimitilu", category: "snacks",
     catLabel: "Traditional Snack", img: "images/gorimitilu.jpg",
     desc: "Traditional ring-shaped rice snack, crisp and savoury.",
@@ -383,6 +454,7 @@ document.addEventListener("DOMContentLoaded", () => {
   wireRevealAnimations();
   renderProductGrid("all");
   wireMenuTabs();
+  wireMenuSearch();
   wireNavbar();
   wireMobileMenu();
   wireModals();
@@ -423,57 +495,320 @@ function pcImageMarkup(p){
   }
   return `<div class="pc-image-pending" role="img" aria-label="${p.name} — photograph coming soon">${PENDING_ICON}</div>`;
 }
+function getStartingPriceLabel(p) {
+  const rows = p.hasFlour
+    ? p.priceSets.godhuma
+    : p.prices;
 
-function renderProductGrid(filter){
+  if (!rows || !rows.length) return "";
+
+  const [quantity, price] = rows[0];
+  const hasMore = rows.length > 1;
+
+  return `
+    <div class="pc-price-row">
+      <span class="pc-qty-chip">${quantity}</span>
+      <span class="pc-price-main">
+        <span class="pc-price-value">₹${price}</span>
+        ${hasMore ? `<span class="pc-price-hint">onwards</span>` : ``}
+      </span>
+    </div>
+  `;
+}
+
+// function renderProductGrid(filter){
+//   const grid = document.getElementById("productGrid");
+//   const empty = document.getElementById("menuEmpty");
+//   grid.innerHTML = "";
+//   const items = filter === "all" ? PRODUCTS : PRODUCTS.filter(p => p.category === filter);
+
+//   if (!items.length){ empty.style.display = "block"; return; }
+//   empty.style.display = "none";
+
+//   items.forEach((p, i) => {
+//     const card = document.createElement("article");
+//     card.className = "product-card reveal-card";
+//     card.innerHTML = `
+//       <div class="pc-image">
+//         ${pcImageMarkup(p)}
+//         <span class="pc-badge">${p.catLabel}</span>
+//       </div>
+//       <div class="pc-body">
+//         <h3 class="pc-name">${p.name}</h3>
+//         <p class="pc-desc">${p.desc}</p>
+//         <span class="pc-price">${getStartingPriceLabel(p)}</span>
+//         <div class="pc-actions">
+//           <button type="button" class="pc-btn-price" data-price-id="${p.id}">Add to Cart</button>
+//           <button type="button" class="pc-btn-about" data-about-id="${p.id}">About</button>
+//         </div>
+//       </div>
+//     `;
+//     grid.appendChild(card);
+//   });
+
+//   grid.querySelectorAll("[data-price-id]").forEach(btn => {
+//     btn.addEventListener("click", () => openPriceModal(btn.getAttribute("data-price-id")));
+//   });
+//   grid.querySelectorAll("[data-about-id]").forEach(btn => {
+//     btn.addEventListener("click", () => openAboutModal(btn.getAttribute("data-about-id")));
+//   });
+
+//   // (re)observe new cards for reveal animation
+//   observeEls(grid.querySelectorAll(".reveal-card"));
+// }
+
+
+let activeMenuFilter = "all";
+let menuSearchQuery = "";
+
+function renderProductGrid(filter = activeMenuFilter, searchQuery = menuSearchQuery) {
+
   const grid = document.getElementById("productGrid");
   const empty = document.getElementById("menuEmpty");
+
+  if (!grid) return;
+
+  activeMenuFilter = filter;
+  menuSearchQuery = searchQuery;
+
   grid.innerHTML = "";
-  const items = filter === "all" ? PRODUCTS : PRODUCTS.filter(p => p.category === filter);
 
-  if (!items.length){ empty.style.display = "block"; return; }
-  empty.style.display = "none";
+  const query = searchQuery.trim().toLowerCase();
 
-  items.forEach((p, i) => {
+  let items = PRODUCTS.filter(p => {
+
+    /* CATEGORY FILTER */
+    const matchesCategory =
+      filter === "all" ||
+      p.category === filter;
+
+    if (!matchesCategory) return false;
+
+    /* SEARCH FILTER */
+    if (!query) return true;
+
+    const searchableText = [
+      p.name,
+      p.category,
+      p.catLabel,
+      p.desc,
+      p.about?.what,
+      p.about?.tradition,
+      p.about?.taste,
+      ...(p.about?.loved || [])
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+
+    return searchableText.includes(query);
+  });
+
+  if (!items.length) {
+    if (empty) {
+      empty.innerHTML = `
+        <div class="search-empty-content">
+          <div class="search-empty-icon">⌕</div>
+          <h3>No items found</h3>
+          <p>
+            We couldn't find anything matching
+            "<strong>${searchQuery}</strong>".
+          </p>
+          <button
+            type="button"
+            class="btn btn-outline-dark"
+            id="clearSearchEmpty"
+          >
+            Show All Items
+          </button>
+        </div>
+      `;
+
+      empty.style.display = "block";
+
+      const clearEmpty =
+        document.getElementById("clearSearchEmpty");
+
+      if (clearEmpty) {
+        clearEmpty.addEventListener("click", () => {
+          const input = document.getElementById("menuSearch");
+
+          if (input) {
+            input.value = "";
+          }
+
+          menuSearchQuery = "";
+
+          renderProductGrid(activeMenuFilter, "");
+          updateSearchClearButton();
+        });
+      }
+    }
+
+    return;
+  }
+
+  if (empty) {
+    empty.style.display = "none";
+  }
+
+  items.forEach((p) => {
+
     const card = document.createElement("article");
+
     card.className = "product-card reveal-card";
+
     card.innerHTML = `
       <div class="pc-image">
         ${pcImageMarkup(p)}
-        <span class="pc-badge">${p.catLabel}</span>
+
+        <span class="pc-badge">
+          ${p.catLabel}
+        </span>
       </div>
+
       <div class="pc-body">
-        <h3 class="pc-name">${p.name}</h3>
-        <p class="pc-desc">${p.desc}</p>
-        <span class="pc-price">Starts at ₹${p.startAt}</span>
+
+        <h3 class="pc-name">
+          ${p.name}
+        </h3>
+
+        <p class="pc-desc">
+          ${p.desc}
+        </p>
+
+        ${getStartingPriceLabel(p)}
+
         <div class="pc-actions">
-          <button type="button" class="pc-btn-price" data-price-id="${p.id}">View Prices</button>
-          <button type="button" class="pc-btn-about" data-about-id="${p.id}">About</button>
+
+          <button
+            type="button"
+            class="pc-btn-price"
+            data-price-id="${p.id}"
+          >
+            View Prices
+          </button>
+
+          <button
+            type="button"
+            class="pc-btn-about"
+            data-about-id="${p.id}"
+          >
+            About
+          </button>
+
         </div>
+
       </div>
     `;
+
     grid.appendChild(card);
   });
 
+  /* PRICE BUTTONS */
+
   grid.querySelectorAll("[data-price-id]").forEach(btn => {
-    btn.addEventListener("click", () => openPriceModal(btn.getAttribute("data-price-id")));
-  });
-  grid.querySelectorAll("[data-about-id]").forEach(btn => {
-    btn.addEventListener("click", () => openAboutModal(btn.getAttribute("data-about-id")));
+
+    btn.addEventListener("click", () => {
+
+      openPriceModal(
+        btn.getAttribute("data-price-id")
+      );
+
+    });
+
   });
 
-  // (re)observe new cards for reveal animation
-  observeEls(grid.querySelectorAll(".reveal-card"));
+  /* ABOUT BUTTONS */
+
+  grid.querySelectorAll("[data-about-id]").forEach(btn => {
+
+    btn.addEventListener("click", () => {
+
+      openAboutModal(
+        btn.getAttribute("data-about-id")
+      );
+
+    });
+
+  });
+
+  /* REVEAL ANIMATION */
+
+  observeEls(
+    grid.querySelectorAll(".reveal-card")
+  );
+}
+
+/* Shows/hides the little "×" clear button in the search bar
+   depending on whether there's any text in the search input. */
+function updateSearchClearButton(){
+  const input = document.getElementById("menuSearch");
+  const clear = document.getElementById("menuSearchClear");
+
+  if (!input || !clear) return;
+
+  clear.hidden = !input.value.trim();
+}
+
+/* Wires the menu search input + its clear button. Typing filters
+   the product grid (via renderProductGrid's existing search
+   logic) while keeping whatever category tab is active. */
+function wireMenuSearch(){
+  const input = document.getElementById("menuSearch");
+  const clear = document.getElementById("menuSearchClear");
+
+  if (!input || !clear) return;
+
+  input.addEventListener("input", () => {
+    menuSearchQuery = input.value.trim().toLowerCase();
+
+    updateSearchClearButton();
+
+    renderProductGrid(activeMenuFilter, menuSearchQuery);
+  });
+
+  clear.addEventListener("click", () => {
+    input.value = "";
+    menuSearchQuery = "";
+
+    updateSearchClearButton();
+
+    renderProductGrid(activeMenuFilter, "");
+
+    input.focus();
+  });
+
+  updateSearchClearButton();
 }
 
 function wireMenuTabs(){
-  const tabs = document.querySelectorAll(".menu-tab");
+
+  const tabs =
+    document.querySelectorAll(".menu-tab");
+
   tabs.forEach(tab => {
+
     tab.addEventListener("click", () => {
-      tabs.forEach(t => t.classList.remove("active"));
+
+      tabs.forEach(t =>
+        t.classList.remove("active")
+      );
+
       tab.classList.add("active");
-      renderProductGrid(tab.getAttribute("data-filter"));
+
+      activeMenuFilter =
+        tab.getAttribute("data-filter");
+
+      renderProductGrid(
+        activeMenuFilter,
+        menuSearchQuery
+      );
+
     });
+
   });
+
 }
 
 /* Jump to menu + pre-filter, used by category cards */
