@@ -849,7 +849,9 @@ p{ margin:0; }
   background: var(--ivory);
   border-radius: var(--radius-lg);
   max-width: 460px; width:100%;
-  max-height: 88vh; overflow-y:auto;
+  max-height: 88vh;
+  display:flex; flex-direction:column;
+  overflow: hidden;
   box-shadow: var(--shadow-lift);
   transform: scale(0.94) translateY(16px);
   transition: transform .35s cubic-bezier(.2,.8,.2,1);
@@ -857,22 +859,28 @@ p{ margin:0; }
 }
 .modal-overlay.open .modal-box{ transform: scale(1) translateY(0); }
 .modal-close{
-  position: sticky; top:16px; float:right; margin: 16px 16px 0 0;
+  position: absolute; top:16px; right:16px;
   width:38px; height:38px; border-radius:50%;
   background: rgba(42,24,16,0.08); border:none;
-  display:flex; align-items:center; justify-content:center; z-index:5;
+  display:flex; align-items:center; justify-content:center; z-index:10;
 }
-.modal-close svg{ width:16px; height:16px; color: var(--ink); }
 .modal-close:hover{ background: var(--maroon); }
 .modal-close:hover svg{ color: var(--cream); }
+.modal-close svg{ width:16px; height:16px; color: var(--ink); }
 
-.modal-image{ width:100%; height:220px; object-fit:cover; }
+.modal-image{ flex-shrink:0; width:100%; height:220px; object-fit:cover; }
 .modal-image-pending{
   width:100%; height:220px; display:flex; align-items:center; justify-content:center;
   background: radial-gradient(circle at 50% 42%, var(--cream-2) 0%, var(--cream) 72%);
 }
 .modal-image-pending svg{ width:64px; height:64px; color: var(--gold-dim); opacity:0.55; }
-.modal-body{ padding: 8px 30px 30px; }
+.modal-body{
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 8px 30px 30px;
+}
 @media (max-width: 400px){
   .modal-body{ padding: 8px 20px 24px; }
   .modal-actions{ flex-direction:column; }
@@ -936,6 +944,44 @@ p{ margin:0; }
 .modal-add-btn{ width:100%; justify-content:space-between; }
 .modal-add-price{ font-family: var(--font-display); font-weight:700; }
 .modal-actions-secondary{ margin-top:10px; }
+
+/* Pinned "Add to Cart" bar. It now lives as the LAST element
+   inside the scrollable .modal-body and uses position:sticky so
+   it clamps to the bottom of the visible scroll area the moment
+   content overflows — visible from the first render, no matter
+   how many size options or how much copy a product has, without
+   depending on fragile flex-shrink math for the rest of the box. */
+.modal-sticky-footer{
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+
+  /* bleed out of modal-body's own padding so the bar spans full
+     width and sits flush with the bottom edge */
+  margin: 18px -30px -30px;
+  padding: 16px 30px calc(16px + env(safe-area-inset-bottom, 0px));
+
+  background: var(--ivory);
+  border-top: 1px solid rgba(91,22,26,0.12);
+  box-shadow: 0 -8px 18px rgba(42,24,16,0.06);
+}
+.modal-sticky-footer .modal-actions{
+    margin: 0;
+    display: flex;
+    justify-content: center;
+}
+
+.modal-sticky-footer .modal-add-btn{
+    width: 90%;
+    flex: 0 0 90%;
+    margin: 0 auto;
+}
+@media (max-width: 400px){
+  .modal-sticky-footer{
+    margin: 16px -20px -24px;
+    padding: 14px 20px calc(14px + env(safe-area-inset-bottom, 0px));
+  }
+}
 
 .bulk-note{
   background: var(--cream-2); border-radius: var(--radius-sm); padding:16px 18px;
@@ -1537,4 +1583,16 @@ p{ margin:0; }
 .search-empty-content p {
   color: var(--ink-soft);
   margin-bottom: 20px;
+}
+/* FINAL FIX — Make modal Add to Cart button narrower */
+.modal-sticky-footer .modal-actions {
+    display: flex;
+    justify-content: center;
+}
+
+.modal-sticky-footer .modal-actions .modal-add-btn {
+    width: 85% !important;
+    max-width: 85% !important;
+    flex: 0 0 85% !important;
+    margin: 0 auto !important;
 }

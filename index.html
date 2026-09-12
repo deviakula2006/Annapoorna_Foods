@@ -207,7 +207,7 @@
       <div class="section-header reveal-up">
         <span class="section-kicker">The Full Spread</span>
         <h2>Our Complete Menu</h2>
-        <p>Traditional recipes across sweets, snacks and podis — browse by category or see everything at once.</p>
+        <p>24 traditional recipes across sweets, snacks and podis — browse by category or see everything at once.</p>
       </div>
       
 
@@ -596,83 +596,154 @@
 
 <!-- ============ PRICE MODAL ============ -->
 <div class="modal-overlay" id="priceModal" role="dialog" aria-modal="true" aria-labelledby="priceModalTitle">
+
   <div class="modal-box">
+
+    <!-- Close Button -->
     <button class="modal-close" aria-label="Close">
-      <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <svg viewBox="0 0 24 24" fill="none">
+        <path
+          d="M6 6l12 12M18 6L6 18"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+        />
+      </svg>
     </button>
+
+    <!-- Product Image -->
     <img class="modal-image" src="" alt="">
+
+    <!-- SCROLLING PRODUCT CONTENT -->
     <div class="modal-body">
+
+      <!-- Product Category -->
       <span class="modal-badge"></span>
+
+      <!-- Product Name -->
       <h3 class="modal-title" id="priceModalTitle"></h3>
 
+      <!-- Flour Selection -->
       <div class="flour-select-wrap" style="display:none;">
         <label for="flourSelect">Flour Type</label>
+
         <select class="flour-select" id="flourSelect">
           <option value="godhuma">Godhuma Flour</option>
           <option value="maida">Maida</option>
         </select>
       </div>
 
+      <!-- Product Variants / Sizes -->
       <div class="variant-select" id="variantSelect"></div>
 
+      <!-- Quantity -->
       <div class="qty-row">
+
         <span class="qty-label">Quantity</span>
+
         <div class="qty-stepper">
-          <button type="button" class="qty-btn" id="qtyMinus" aria-label="Decrease quantity">−</button>
+
+          <button
+            type="button"
+            class="qty-btn"
+            id="qtyMinus"
+            aria-label="Decrease quantity"
+          >
+            −
+          </button>
+
           <span class="qty-value" id="qtyValue">1</span>
-          <button type="button" class="qty-btn" id="qtyPlus" aria-label="Increase quantity">+</button>
+
+          <button
+            type="button"
+            class="qty-btn"
+            id="qtyPlus"
+            aria-label="Increase quantity"
+          >
+            +
+          </button>
+
         </div>
+
       </div>
 
+      <!-- Bulk Orders -->
       <div class="bulk-note">
         <strong>Bulk Orders?</strong>
         For larger quantities, contact us for special pricing and discounts.
       </div>
 
-      <div class="modal-actions">
-        <button type="button" class="btn btn-primary modal-add-btn" id="modalAddToCartBtn">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M3 3h2l2.4 12.4a2 2 0 0 0 2 1.6h8.4a2 2 0 0 0 2-1.6L21 8H6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="20.5" r="1.4" fill="currentColor"/><circle cx="17" cy="20.5" r="1.4" fill="currentColor"/></svg>
-          Add to Cart
-          <span class="modal-add-price" id="modalAddPrice"></span>
-        </button>
-      </div>
+      <!-- Call Us -->
       <div class="modal-actions modal-actions-secondary">
-        <a href="#" data-tel class="btn btn-outline-dark btn-block">Call Us</a>
+        <a
+          href="#"
+          data-tel
+          class="btn btn-outline-dark btn-block"
+        >
+          Call Us
+        </a>
       </div>
-    </div>
-  </div>
-</div>
 
-<!-- ============ ABOUT MODAL ============ -->
-<div class="modal-overlay" id="aboutModal" role="dialog" aria-modal="true" aria-labelledby="aboutModalTitle">
-  <div class="modal-box">
-    <button class="modal-close" aria-label="Close">
-      <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-    </button>
-    <img class="modal-image" src="" alt="">
-    <div class="modal-body">
-      <span class="modal-badge"></span>
-      <h3 class="modal-title" id="aboutModalTitle"></h3>
-
-      <div class="about-section">
-        <h4>What It Is</h4>
-        <p class="about-what"></p>
-      </div>
-      <div class="about-section">
-        <h4>Tradition</h4>
-        <p class="about-tradition"></p>
-      </div>
-      <div class="about-section">
-        <h4>Taste &amp; Texture</h4>
-        <p class="about-taste"></p>
-      </div>
-      <div class="about-section">
-        <h4>Why People Love It</h4>
-        <ul class="about-list"></ul>
-      </div>
     </div>
+    <!-- END SCROLLING PRODUCT CONTENT -->
+
+
+    <!-- =========================================
+         STICKY ADD TO CART FOOTER
+         OUTSIDE modal-body
+         ========================================= -->
+    <div class="modal-sticky-footer">
+
+      <div class="modal-actions">
+
+        <button
+          type="button"
+          class="btn btn-primary modal-add-btn"
+          id="modalAddToCartBtn"
+        >
+
+          <svg viewBox="0 0 24 24" fill="none">
+            <path
+              d="M3 3h2l2.4 12.4a2 2 0 0 0 2 1.6h8.4a2 2 0 0 0 2-1.6L21 8H6"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+
+            <circle
+              cx="9.5"
+              cy="20.5"
+              r="1.4"
+              fill="currentColor"
+            />
+
+            <circle
+              cx="17"
+              cy="20.5"
+              r="1.4"
+              fill="currentColor"
+            />
+          </svg>
+
+          Add to Cart
+
+          <span
+            class="modal-add-price"
+            id="modalAddPrice"
+          ></span>
+
+        </button>
+
+      </div>
+
+    </div>
+    <!-- END STICKY ADD TO CART FOOTER -->
+
   </div>
+
 </div>
+<!-- END PRICE MODAL -->
 
 <script src="script.js"></script>
 <script>

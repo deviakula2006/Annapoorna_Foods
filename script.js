@@ -946,6 +946,13 @@ function openPriceModal(id){
     select.onchange = () => {
       currentFlour = select.value;
       modalVariantIndex = 0;
+
+      // Same rule as switching size: a fresh flour type means a
+      // fresh selection, so quantity goes back to 1 instead of
+      // silently carrying over from the previous choice.
+      modalQty = 1;
+      renderQtyStepper();
+
       renderVariantSelect(p);
       updateModalAddButton(p);
     };
@@ -983,6 +990,14 @@ function renderVariantSelect(p){
     wrap.querySelectorAll(".variant-option").forEach(btn => {
       btn.addEventListener("click", () => {
         modalVariantIndex = parseInt(btn.getAttribute("data-variant-index"), 10);
+
+        // Switching size/weight starts a fresh selection — any quantity
+        // chosen for the previous size shouldn't silently carry over
+        // (e.g. picking "2" for 500g, then tapping 1kg, should not add
+        // 2 x 1kg by surprise).
+        modalQty = 1;
+        renderQtyStepper();
+
         renderVariantSelect(p);
         updateModalAddButton(p);
       });
@@ -1260,13 +1275,47 @@ function wireCartItemEvents(){
   });
 }
 
+// function openCart(){
+//   renderCart();
+//   document.getElementById("cartOverlay").classList.add("open");
+//   document.body.style.overflow = "hidden";
+// }
+// function closeCart(){
+//   document.getElementById("cartOverlay").classList.remove("open");
+//   document.body.style.overflow = "";
+// }
 function openCart(){
+  const priceModal = document.getElementById("priceModal");
+  const aboutModal = document.getElementById("aboutModal");
+  const checkoutModal = document.getElementById("checkoutModal");
+  const cartOverlay = document.getElementById("cartOverlay");
+
+  // Close any currently open modal
+  [priceModal, aboutModal, checkoutModal].forEach(modal => {
+    if (modal) {
+      modal.classList.remove("open");
+    }
+  });
+
+  // Render latest cart contents
   renderCart();
-  document.getElementById("cartOverlay").classList.add("open");
+
+  // Open cart drawer
+  if (cartOverlay) {
+    cartOverlay.classList.add("open");
+  }
+
+  // Keep page locked while cart is open
   document.body.style.overflow = "hidden";
 }
+
 function closeCart(){
-  document.getElementById("cartOverlay").classList.remove("open");
+  const cartOverlay = document.getElementById("cartOverlay");
+
+  if (cartOverlay) {
+    cartOverlay.classList.remove("open");
+  }
+
   document.body.style.overflow = "";
 }
 
